@@ -1,0 +1,149 @@
+{
+    "operationId": "3051932a-fdd2-48fa-b330-7e7d41535969",
+    "result": {
+        "chatsReadabilityWebhook": {
+            "chats": [
+                {
+                    "agentUserId": 0,
+                    "chatId": 400,
+                    "readAt": "2019-08-24T14:15:22Z",
+                    "userId": 1
+                }
+            ],
+            "users": [
+                {
+                    "avatar": {
+                        "images": {
+                            "big": "string",
+                            "small": "string"
+                        }
+                    },
+                    "firstName": "string",
+                    "lastName": "string",
+                    "name": "string",
+                    "userId": 1
+                }
+            ],
+            "webhookType": "chatsReadability"
+        },
+        "offersMessagesWebhook": {
+            "chats": [
+                {
+                    "chatId": 400,
+                    "createdAt": "2019-08-24T14:15:22Z",
+                    "messages": [
+                        {
+                            "content": {
+                                "files": [
+                                    {
+                                        "fileId": "d5c09995-5677-4303-923e-401182574cc5",
+                                        "mimeType": null,
+                                        "name": "nullName"
+                                    }
+                                ],
+                                "offers": [
+                                    {
+                                        "formattedAddress": null,
+                                        "formattedInfo": null,
+                                        "formattedPrice": null,
+                                        "photoUrls": [],
+                                        "realtyOfferId": null,
+                                        "url": "https://www.cian.ru/sale/flat/311253362/"
+                                    }
+                                ],
+                                "text": "string#401"
+                            },
+                            "createdAt": "2019-08-24T14:15:22Z",
+                            "direction": "in",
+                            "messageId": "string",
+                            "userId": 1
+                        }
+                    ],
+                    "offerId": 1,
+                    "updatedAt": "2019-08-24T14:15:22Z"
+                }
+            ],
+            "offers": [
+                {
+                    "address": "string",
+                    "externalId": "string",
+                    "id": 1,
+                    "mainPhoto": {
+                        "miniUrl": "string",
+                        "url": "string"
+                    },
+                    "price": "string",
+                    "publishedUserId": 1,
+                    "title": "string",
+                    "url": "string",
+                    "userId": 1
+                }
+            ],
+            "users": [
+                {
+                    "avatar": {
+                        "images": {
+                            "big": "string",
+                            "small": "string"
+                        }
+                    },
+                    "firstName": "string",
+                    "lastName": "string",
+                    "name": "string",
+                    "userId": 1
+                }
+            ],
+            "webhookType": "chatsReadability"
+        },
+        "systemMessagesWebhook": {
+            "chats": [
+                {
+                    "agentUserId": 1,
+                    "chatId": 400,
+                    "createdAt": "2019-08-24T14:15:22Z",
+                    "messages": [
+                        {
+                            "content": {
+                                "actionButtons": [
+                                    {
+                                        "link": null,
+                                        "text": null
+                                    }
+                                ],
+                                "files": [
+                                    {
+                                        "fileId": null,
+                                        "mimeType": null,
+                                        "name": null
+                                    }
+                                ],
+                                "htmlText": "string",
+                                "text": "string"
+                            },
+                            "createdAt": "2019-08-24T14:15:22Z",
+                            "direction": "in",
+                            "messageId": "string",
+                            "userId": 1
+                        }
+                    ],
+                    "updatedAt": "2019-08-24T14:15:22Z"
+                }
+            ],
+            "users": [
+                {
+                    "avatar": {
+                        "images": {
+                            "big": "string",
+                            "small": "string"
+                        }
+                    },
+                    "firstName": "string",
+                    "lastName": "string",
+                    "name": "string",
+                    "userId": 1
+                }
+            ],
+            "webhookType": "chatsReadability"
+        }
+    }
+}

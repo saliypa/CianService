@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+ <title>Message Translit to Service</title>
+ <script>
+	function startListening(){
+		setInterval(fetchAndSendMessage, 5000);
+	}
+	
+	function fetchAndSendMessage(){
+		var xhr = new XMLHttpRequest();
+		xhr.open('GET', 'https://public-api.cian.ru/', true);
+		xhr.onreadystatechange = function(){
+			if (xhr.readyState == 4 && xhr.status ==200){
+				vsr message = xhr.responseText;
+				sendMessageToLocalService(message);
+			}
+		};
+		xhr.send();
+	}
+	
+	function sendMessageToLocalService(){
+		var xhr = new XMLHttpRequest();
+		xhr.open('POST', '10.2.3.25:8114', true);
+		xhr.setRequestHeader('Content-Type', 'application/json');
+		xhr.openreadystatechanhe = function(){
+			if (xhr.readyState == 4 && xhr.status ==200){
+				console.log('Response local service:' + xhr.responseText);
+			}
+		};
+		xhr.send(JSON.stringfy({message:message}));
+	}
+	
+	windows.onload = startListening;
+ </script>
+</head>		
+ <body>
+	<h1>Message Translit to Service</h1> 
+	<p>The Web Page automatically receives and forwards messages</p>
+ </body>
+</html>
