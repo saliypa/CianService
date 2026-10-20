@@ -32,6 +32,12 @@ var
 
 implementation
 
+uses
+  System.SyncObjs;
+
+var
+  LogLock: TCriticalSection;
+
 
 // -- Запись в лог
 procedure WriteLog(const AText, ALogFilePath, AHistLogPath: string; const AMaxLogSize: integer);
@@ -72,7 +78,12 @@ end;
 // -- Запись в лог, используя общие настройки
 procedure WriteLog_C(const AText: string);
 begin
-  WriteLog(DateTimeToStr(now()) + ' ' + AText, LogFilePath, HistLogPath, MaxLogSize);
+  LogLock.Enter;
+  try
+    WriteLog(DateTimeToStr(now()) + ' ' + AText, LogFilePath, HistLogPath, MaxLogSize);
+  finally
+    LogLock.Leave;
+  end;
 end;
 
 
@@ -118,6 +129,9 @@ begin
 end;
 
 initialization
+  LogLock := TCriticalSection.Create;
 
+finalization
+  LogLock.Free;
 
 end.

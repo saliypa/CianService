@@ -91,7 +91,12 @@ begin
 
    WriteLog_C('+++ DB. SetFile. OfflineChat_ID='+AChatId);
    Result:=True;
-  except on e:Exception do WriteLog_C('*** Has error in TCianDBCore.SetFileToDB: ['+E.ClassName+': '+e.Message+']'); end;
+  except on e:Exception do
+    begin
+     WriteLog_C('*** Has error in TCianDBCore.SetFileToDB: ['+E.ClassName+': '+e.Message+']');
+     raise;
+    end;
+  end;
  finally
   try SP.Close; except end;
   FreeAndNil(SP);
@@ -120,9 +125,14 @@ begin
    SP.Parameters.ParamByName('@user_id').Value:=AUserId;
    SP.Open;
 
-   Result:=SP.FieldByName('ID').Value;
+   Result:=SP.FieldByName('ID').AsString;
    WriteLog_C('+++ DB. Set. OfflineChat_ID='+Result);
-  except on e:Exception do WriteLog_C('*** Has error in TCianDBCore.SetOfflineMess: ['+E.ClassName+': '+e.Message+']'); end;
+  except on e:Exception do
+    begin
+     WriteLog_C('*** Has error in TCianDBCore.SetOfflineMess: ['+E.ClassName+': '+e.Message+']');
+     raise;
+    end;
+  end;
  finally
   try SP.Close; except end;
   FreeAndNil(SP);
@@ -150,11 +160,16 @@ begin
    SP.Parameters.ParamByName('@chat_id').Value:=AChatId;
    SP.Parameters.ParamByName('@Mess').Value:=AValue;
    SP.Open;
-   sResult:=SP.FieldByName('chat_ID').Value;
+   sResult:=SP.FieldByName('chat_ID').AsString;
 
    Result:=sResult<>EmptyStr;
    WriteLog_C('+++ DB. Update. OfflineChat_ID='+sResult);
-  except on e:Exception do WriteLog_C('*** Has error in TCianDBCore.SetOfflineMess: ['+E.ClassName+': '+e.Message+']'); end;
+  except on e:Exception do
+    begin
+     WriteLog_C('*** Has error in TCianDBCore.UpdOfflineMess: ['+E.ClassName+': '+e.Message+']');
+     raise;
+    end;
+  end;
  finally
   try SP.Close; except end;
   FreeAndNil(SP);
@@ -187,10 +202,15 @@ begin
    SP.Parameters.ParamByName('@UserAgent').Value:='Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181';
    SP.Open;
 
-   Result:=SP.Fields.Fields[0].Value;
+   Result:=SP.Fields.Fields[0].AsString;
 
    WriteLog_C('+++ DB. SetUser. ID='+Result);
-  except on e:Exception do WriteLog_C('*** Has error in TCianDBCore.SetUserSession: ['+E.ClassName+': '+e.Message+']'); end;
+  except on e:Exception do
+    begin
+     WriteLog_C('*** Has error in TCianDBCore.SetUserSession: ['+E.ClassName+': '+e.Message+']');
+     raise;
+    end;
+  end;
  finally
   try SP.Close; except end;
   FreeAndNil(SP);
@@ -223,13 +243,26 @@ begin
 
    SP.Open;
 
+   //Ќеизвестный/забаненный клиент: процедура возвращает одну колонку myxml с ошибкой
+   if SP.FieldCount<3
+    then
+     begin
+      WriteLog_C('+++ DB. GetFreeOperator. Rejected: '+SP.Fields.Fields[0].AsString);
+      Exit;
+     end;
+
+   Result.ResultValue[0]:=SP.Fields.Fields[0].AsString;
+   Result.ResultValue[1]:=SP.Fields.Fields[1].AsString;
+   Result.ResultValue[2]:=SP.Fields.Fields[2].AsString;
    Result.ResultType:=1;
-   Result.ResultValue[0]:=SP.Fields.Fields[0].Value;
-   Result.ResultValue[1]:=SP.Fields.Fields[1].Value;
-   Result.ResultValue[2]:=SP.Fields.Fields[2].Value;
 
    WriteLog_C('+++ DB. GetFreeOperator. OperatorAllow='+Result.ResultValue[1]+' Operator='+Result.ResultValue[2]+' Description='+Result.ResultValue[0]);
-  except on e:Exception do WriteLog_C('*** Has error in TCianDBCore.SetUser: ['+E.ClassName+': '+e.Message+']'); end;
+  except on e:Exception do
+    begin
+     WriteLog_C('*** Has error in TCianDBCore.GetFreeOperator: ['+E.ClassName+': '+e.Message+']');
+     raise;
+    end;
+  end;
  finally
   try SP.Close; except end;
   FreeAndNil(SP);
@@ -246,6 +279,7 @@ var
  ANewChat    : boolean;
 begin
  Result.ResultType:=-1;
+ ANewChat:=False;
  SetLength(Result.ResultValue,1);
  if not AConnection.Connected
   then Exit;
@@ -268,20 +302,33 @@ begin
    SP.Parameters.ParamByName('@Message').Value:=StringReplace(AValueText,#$A,Chr(13),[rfReplaceAll])+iif(sDebugMode, ' #'+GetCurrentTimeAsString, EmptyStr);
    SP.Open;
 
-   AChatId:=SP.Fields.Fields[0].Value;
-   AOperId:=SP.Fields.Fields[2].Value;
+   AChatId:=SP.Fields.Fields[0].AsString;
+   AOperId:=SP.Fields.Fields[2].AsString;
    if SP.FieldCount>4
-    then ANewChat:=SP.Fields.Fields[4].Value;
+    then ANewChat:=SP.Fields.Fields[4].AsBoolean;
 
+
+   Result.ResultValue[0]:=AChatId;
+
+   //chat_id=0: чат не создан (нет оператора/сессии) - не путать с продолжением чата
+   if StrToIntDef(AChatId,0)<=0
+    then
+     begin
+      WriteLog_C('+++ DB. SetNewChat. Chat is not created. OperatorId='+AOperId);
+      Exit;
+     end;
 
    if ANewChat
     then Result.ResultType:=0
     else Result.ResultType:=1;
 
-   Result.ResultValue[0]:=AChatId;
-
    WriteLog_C('+++ DB. SetNewChat. NewChat='+ANewChat.ToString+' ChatId='+AChatId+' OperatorId='+AOperId);
-  except on e:Exception do WriteLog_C('*** Has error in TCianDBCore.SetNewChat: ['+E.ClassName+': '+e.Message+']'); end;
+  except on e:Exception do
+    begin
+     WriteLog_C('*** Has error in TCianDBCore.SetNewChat: ['+E.ClassName+': '+e.Message+']');
+     raise;
+    end;
+  end;
  finally
   try Sp.Close; except end;
   FreeAndNil(SP);

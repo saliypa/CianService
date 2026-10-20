@@ -1,6 +1,12 @@
 object CianChat: TCianChat
   OldCreateOrder = False
-  DisplayName = 'Service1'
+  DisplayName = 'CianChatService'
+  AfterInstall = ServiceAfterInstall
+  OnContinue = ServiceContinue
+  OnExecute = ServiceExecute
+  OnPause = ServicePause
+  OnStart = ServiceStart
+  OnStop = ServiceStop
   Height = 150
   Width = 215
   object MainConnection: TADOConnection

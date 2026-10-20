@@ -8,7 +8,8 @@ uses
   Classes.Common in 'Classes.Common\Classes.Common.pas',
   Classes.DBCore in 'Classes.DBCore\Classes.DBCore.pas',
   Classes.CianApiCore in 'Classes.CianCore\Classes.CianApiCore.pas',
-  Classes.CianResponseCore in 'Classes.CianCore\Classes.CianResponseCore.pas';
+  Classes.CianResponseCore in 'Classes.CianCore\Classes.CianResponseCore.pas',
+  Classes.CianHandler in 'Classes.CianCore\Classes.CianHandler.pas';
 
 {$R *.res}
 

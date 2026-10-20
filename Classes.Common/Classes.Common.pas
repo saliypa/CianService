@@ -22,9 +22,18 @@ function GetConvertDateTimeTZ(AValue:string):TDateTime;
 function GetLocalIPdress:string;
 function SplitText(AValue:string; ASize:integer=55):string;
 function GetCurrentTimeAsString:string;
+// Имя службы = имя исполняемого файла без расширения (CianChatService, CianChatAssignmentService)
+function GetServiceName:string;
+// Сравнение токенов за постоянное время
+function SameToken(const AValue, AExpected: string):boolean;
+// Безопасное имя файла (без пути и недопустимых символов)
+function SafeFileName(const AValue:string):string;
 
 
 implementation
+
+uses
+ Classes.Inc;
 
 // iif с Integer'ом
 function iif(const ACondition: Boolean; const IfTrue, IfFalse: Integer): Integer; overload;
@@ -134,6 +143,47 @@ end;
 function GetCurrentTimeAsString:string;
 begin
  Result:=FormatDateTime('hh:nn:ss',Now);
+end;
+
+// Имя службы = имя исполняемого файла без расширения.
+// Должно совпадать с именем службы в SCM, иначе VCL не найдёт её в DispatchServiceMain (ошибка 1053)
+function GetServiceName:string;
+begin
+ Result:=ChangeFileExt(ExtractFileName(ParamStr(0)),EmptyStr);
+ if not IsValidIdent(Result)
+  then Result:=cServiceName;
+end;
+
+// Сравнение токенов за постоянное время (не зависит от позиции первого расхождения)
+function SameToken(const AValue, AExpected: string):boolean;
+var
+ i     : integer;
+ ADiff : integer;
+begin
+ Result:=False;
+ if (AExpected=EmptyStr) or
+    (Length(AValue)<>Length(AExpected))
+  then Exit;
+ ADiff:=0;
+ for i:=1 to Length(AExpected) do
+  ADiff:=ADiff or (Ord(AValue[i]) xor Ord(AExpected[i]));
+ Result:=ADiff=0;
+end;
+
+// Безопасное имя файла (без пути и недопустимых символов)
+function SafeFileName(const AValue:string):string;
+const
+ cInvalidChars = '\/:*?"<>|';
+var
+ i:integer;
+begin
+ Result:=AValue;
+ for i:=1 to Length(Result) do
+  if (Pos(Result[i],cInvalidChars)>0) or (Result[i]<' ')
+   then Result[i]:='_';
+ Result:=Trim(Result);
+ if (Result=EmptyStr) or (Result='.') or (Result='..')
+  then Result:='file';
 end;
 
 end.

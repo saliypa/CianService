@@ -2,6 +2,8 @@
 
 Сервис предназначен для обмена ИК модуля "чаты" с открытым public-api.cian.ru
 
+Подробное описание, установка и диагностика: [WIKI.md](WIKI.md)
+
 ## Содержание
 
 - [Установка](#установка)
@@ -31,6 +33,7 @@ cd cianchatservice
 3. **Classes.CianCore** 
    1.  **Classes.CianApiCore.pas** - модуль, содержащий класс обмена api-cian;
    2.  **Classes.CianResponseCore.pas** - модуль, содержащий класс парсинга ответов api-cian;
+   3.  **Classes.CianHandler.pas** - общая логика сервиса и демо: настройки, подписка на вебхуки, обработка входящих запросов;
 4. **Classes.Common** 
    1.  **Classes.Common.pas** - модуль, содержащий вспомагательные методы;
 5. **Classes.DBCore** 
@@ -39,17 +42,18 @@ cd cianchatservice
    1.  **Classes.Logs.pas** -  модуль, содержащий класс логирования (базовый из ИК);
 7. **Classes.Predestinations** 
    1.  **Classes.Inc.pas** - модуль, содержащий общие константы и переменные;
-8. **CianChatExecute.res** - ресурс файл для демонстрационного исполняемого файла;
-9. **CianChatService.res** - ресурс файл для рабочего (сервиса) исполняемого файла;
-10. **CianChatExecute.dpr** - проект для демонстрационного исполняемого файла;
-11. **CianChatService.dpr** - проект для рабочего (сервиса) исполняемого файла;
-12. **ini.Debug** 
+8. Проекты (`.dpr` + `.dproj` + `.res`), код у всех общий, версия **1.1.0.0**:
+   1.  **CianChatService** / **CianChatExecute** - основная служба и демонстрационное приложение;
+   2.  **CianChatAssignmentService** / **CianChatAssignmentExecute** - служба и приложение для переуступок;
+   3.  **CianChatFRTService** / **CianChatFRTExecute** - служба и приложение FRT (ключ Циан будет выдан позже);
+9. **ini.Debug** 
    1.  **CianChatExecute.ini** - конфигурационный файл для демонстрационного исполняемого файла Debug;
    2.  **CianChatService.ini** - конфигурационный файл для рабочего (сервиса) исполняемого файла Debug;
-13. **ini.Release** 
+   3.  **CianChatFRTExecute.ini**, **CianChatFRTService.ini** - то же для пары FRT (порт 8116, `Token` пустой);
+10. **ini.Release** 
    1.  **CianChatExecute.ini** - конфигурационный файл для демонстрационного исполняемого файла Release;
    2.  **CianChatService.ini** - конфигурационный файл для рабочего (сервиса) исполняемого файла Release;
-14. **bat** 
+11. **bat** 
    1.  **register_service_create.bat** - bat файл для регистрации сервиса первым способом;
    2.  **unregister_service_create.bat** - bat файл для отмены регистрации сервиса первым способом;
    3.  **register_service_install.bat** - bat файл для регистрации сервиса вторым способом;
@@ -74,7 +78,10 @@ register_service_create.bat
 register_service_install.bat
 ````
 
-Рядом с исполняемым файлом сохраняется лог работы
+Имя службы равно имени исполняемого файла без расширения (`CianChatService`, `CianChatAssignmentService`, `CianChatFRTService`).
+При регистрации вручную (`sc create`) имя службы должно совпадать с именем exe, иначе служба не запустится (ошибка 1053).
+
+Рядом с исполняемым файлом читается ini (`<имя exe>.ini`) и сохраняется лог работы (`<имя exe>_Log.txt`)
 
 
 ## Управление
@@ -101,11 +108,37 @@ CheckSubscribe=1
 SetSubscribe=1
 #Отписать получателя от вебхуков при старте. При включении, перекрывает параметр SetSubscribe
 SetUnSubscribe=0
-#Адрес на который будет осуществляться пересылка
-WebhooksURL=https://tone.setl.ru/
+#Адрес на который будет осуществляться пересылка (включает секретный сегмент WebhookSecret)
+WebhooksURL=https://tone.setl.ru/chatcian2/<WebhookSecret>/
+#Секретный сегмент пути вебхука (не короче 32 символов). Пусто - вебхуки принимаются без проверки
+WebhookSecret=<секретная строка>
 #Адрес по которому будет идентифицироваться токен
 MainDescription=public-api.cian.ru
-#Токен подключения к Циан
-Token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjcxMTA0NzEwfQ.jsGkyyY_uOw_YskneXT_V2Iom0VVcp14UsUyXmq99c0
+#Токен подключения к Циан (свой для каждой службы). Пусто - служба не работает с Циан
+Token=<ключ Циан>
+#Защитный токен SETL: передаётся в запросах From=SETL заголовком X-Setl-Token или параметром SetlToken
+SetlToken=<секретная строка>
 ```
+
+Токен Циан у каждой службы свой и задаётся в её ini (`Token`). Ключа по умолчанию в коде нет: если `Token` не задан, служба запускается, но с Циан не работает — не подписывается на вебхуки, а запросы `From=SETL` и вебхуки получают `503`.
+
+### Защитный токен SETL
+
+Запросы на отправку сообщений в Циан (`From=SETL`) принимаются только с правильным `SetlToken`:
+
+```
+POST http://<сервер>:8114/
+X-Setl-Token: <SetlToken из ini>
+Content-Type: application/x-www-form-urlencoded
+
+From=SETL&ChatId=123&Message=Текст
+```
+
+Вместо заголовка можно передать параметр `SetlToken=<...>` в теле запроса. Если `SetlToken` в ini не задан, все запросы `From=SETL` отклоняются (403). Значение токена в лог не пишется.
+
+Сообщение отправляется в Циан до ответа: `200` — Циан принял сообщение, `502` — Циан вернул ошибку или недоступен (текст ошибки в теле ответа).
+
+### Секрет вебхука
+
+Циан не подписывает вебхуки, поэтому адрес вебхука содержит секретный сегмент пути (`WebhookSecret`). Запросы на адрес без него отклоняются (404). Подробнее: [WIKI.md](WIKI.md), раздел 2.
 

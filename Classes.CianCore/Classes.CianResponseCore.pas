@@ -13,6 +13,11 @@ type
  end;
 
 type
+  TObjectsHelper = class
+    class procedure FreeObjects<T: class>(var AItems: TArray<T>);
+  end;
+
+type
   TFile = class
     fileId: string;
     mimeType: string;
@@ -37,6 +42,7 @@ type
     offers: TArray<TOffer>;
     text: string;
     constructor Create(AJson: TJSONObject);
+    destructor Destroy; override;
   end;
 
 type
@@ -45,21 +51,23 @@ type
     createdAt: string;
     direction: string;
     messageId: string;
-    userId: Integer;
+    userId: Int64;
     constructor Create(AJson: TJSONObject);
+    destructor Destroy; override;
   end;
 
 type
   TChat = class
-    agentUserId: Integer;
-    chatId: Integer;
+    agentUserId: Int64;
+    chatId: Int64;
     readAt: string;
-    userId: Integer;
+    userId: Int64;
     createdAt: string;
     messages: TArray<TMessage>;
-    offerId: Integer;
+    offerId: Int64;
     updatedAt: string;
     constructor Create(AJson: TJSONObject);
+    destructor Destroy; override;
   end;
 
 type
@@ -73,6 +81,7 @@ type
   TAvatar = class
     images: TImages;
     constructor Create(AJson: TJSONObject);
+    destructor Destroy; override;
   end;
 
 type
@@ -81,8 +90,9 @@ type
     firstName: string;
     lastName: string;
     name: string;
-    userId: Integer;
+    userId: Int64;
     constructor Create(AJson: TJSONObject);
+    destructor Destroy; override;
   end;
 
 type
@@ -91,6 +101,7 @@ type
     users: TArray<TUser>;
     webhookType: string;
     constructor Create(AJson: TJSONObject);
+    destructor Destroy; override;
   end;
 
 type
@@ -104,14 +115,15 @@ type
   TOfferDetails = class
     address: string;
     externalId: string;
-    id: Integer;
+    id: Int64;
     mainPhoto: TMainPhoto;
     price: string;
-    publishedUserId: Integer;
+    publishedUserId: Int64;
     title: string;
     url: string;
-    userId: Integer;
+    userId: Int64;
     constructor Create(AJson: TJSONObject);
+    destructor Destroy; override;
   end;
 
 type
@@ -120,9 +132,10 @@ type
     offers: TArray<TOfferDetails>;
     users: TArray<TUser>;
     webhookType: string;
-    userDict:TDictionary<integer,TUser>;
-    offerDict:TDictionary<integer,TOfferDetails>;
+    userDict:TDictionary<Int64,TUser>;
+    offerDict:TDictionary<Int64,TOfferDetails>;
     constructor Create(AJson: TJSONObject);
+    destructor Destroy; override;
   end;
 
 type
@@ -139,6 +152,7 @@ type
     htmlText: string;
     text: string;
     constructor Create(AJson: TJSONObject);
+    destructor Destroy; override;
   end;
 
 type
@@ -147,8 +161,9 @@ type
     createdAt: string;
     direction: string;
     messageId: string;
-    userId: Integer;
+    userId: Int64;
     constructor Create(AJson: TJSONObject);
+    destructor Destroy; override;
   end;
 
 type
@@ -157,6 +172,7 @@ type
     users: TArray<TUser>;
     webhookType: string;
     constructor Create(AJson: TJSONObject);
+    destructor Destroy; override;
   end;
 
 type
@@ -165,6 +181,7 @@ type
     offersMessagesWebhook: TOffersMessagesWebhook;
     systemMessagesWebhook: TSystemMessagesWebhook;
     constructor Create(AJson: TJSONObject);
+    destructor Destroy; override;
   end;
 
 type
@@ -172,17 +189,118 @@ type
     OperationId: string;
     Result: TResult;
     constructor Create(AJson: TJSONObject);
+    destructor Destroy; override;
   end;
 {$ENDREGION 'CianResponseJson'}
 
 function ParseCianResponseJson(const JsonStr:string):TCianResponseJson;
-function FindUserByUserId(AOffersMessagesWebhook:TOffersMessagesWebhook; AUserId:integer):TUser;
-function FindOfferByOfferId(AOffersMessagesWebhook:TOffersMessagesWebhook; AOfferId:integer):TOfferDetails;
+function FindUserByUserId(AOffersMessagesWebhook:TOffersMessagesWebhook; AUserId:Int64):TUser;
+function FindOfferByOfferId(AOffersMessagesWebhook:TOffersMessagesWebhook; AOfferId:Int64):TOfferDetails;
 
 
 function FoundValueSubscriptions(const JsonStr:string; AValue:string):boolean;
 
 implementation
+
+{$REGION 'Destroy'}
+class procedure TObjectsHelper.FreeObjects<T>(var AItems: TArray<T>);
+var
+  i: Integer;
+begin
+ for i:=0 to High(AItems) do
+  AItems[i].Free;
+ AItems:=nil;
+end;
+
+destructor TContent.Destroy;
+begin
+ TObjectsHelper.FreeObjects<TFile>(files);
+ TObjectsHelper.FreeObjects<TOffer>(offers);
+ inherited;
+end;
+
+destructor TMessage.Destroy;
+begin
+ content.Free;
+ inherited;
+end;
+
+destructor TChat.Destroy;
+begin
+ TObjectsHelper.FreeObjects<TMessage>(messages);
+ inherited;
+end;
+
+destructor TAvatar.Destroy;
+begin
+ images.Free;
+ inherited;
+end;
+
+destructor TUser.Destroy;
+begin
+ avatar.Free;
+ inherited;
+end;
+
+destructor TChatsReadabilityWebhook.Destroy;
+begin
+ TObjectsHelper.FreeObjects<TChat>(chats);
+ TObjectsHelper.FreeObjects<TUser>(users);
+ inherited;
+end;
+
+destructor TOfferDetails.Destroy;
+begin
+ mainPhoto.Free;
+ inherited;
+end;
+
+destructor TOffersMessagesWebhook.Destroy;
+begin
+ //Словари не владеют объектами, объекты освобождаются через массивы
+ userDict.Free;
+ offerDict.Free;
+ TObjectsHelper.FreeObjects<TChat>(chats);
+ TObjectsHelper.FreeObjects<TOfferDetails>(offers);
+ TObjectsHelper.FreeObjects<TUser>(users);
+ inherited;
+end;
+
+destructor TSystemContent.Destroy;
+begin
+ TObjectsHelper.FreeObjects<TActionButton>(actionButtons);
+ TObjectsHelper.FreeObjects<TFile>(files);
+ inherited;
+end;
+
+destructor TSystemMessage.Destroy;
+begin
+ content.Free;
+ inherited;
+end;
+
+destructor TSystemMessagesWebhook.Destroy;
+begin
+ TObjectsHelper.FreeObjects<TChat>(chats);
+ TObjectsHelper.FreeObjects<TUser>(users);
+ inherited;
+end;
+
+destructor TResult.Destroy;
+begin
+ chatsReadabilityWebhook.Free;
+ offersMessagesWebhook.Free;
+ systemMessagesWebhook.Free;
+ inherited;
+end;
+
+destructor TCianResponseJson.Destroy;
+begin
+ Result.Free;
+ inherited;
+end;
+{$ENDREGION 'Destroy'}
 
 {$REGION 'CianResponseJson'}
 { TFile }
@@ -257,7 +375,7 @@ begin
  if AJson.Contains('messageId')
   then messageId:=AJson.GetValue<string>('messageId');
  if AJson.Contains('userId')
-  then userId:=AJson.GetValue<Integer>('userId');
+  then userId:=AJson.GetValue<Int64>('userId');
 end;
 
 { TChat }
@@ -268,13 +386,13 @@ var
   JsonArray: TJSONArray;
 begin
  if AJson.Contains('agentUserId')
-  then agentUserId:=AJson.GetValue<Integer>('agentUserId');
+  then agentUserId:=AJson.GetValue<Int64>('agentUserId');
  if AJson.Contains('chatId')
-  then chatId:=AJson.GetValue<Integer>('chatId');
+  then chatId:=AJson.GetValue<Int64>('chatId');
  if AJson.Contains('readAt')
   then readAt:=(AJson.GetValue<string>('readAt'));
  if AJson.Contains('userId')
-  then userId:=AJson.GetValue<Integer>('userId');
+  then userId:=AJson.GetValue<Int64>('userId');
  if AJson.Contains('createdAt')
   then createdAt:=AJson.GetValue<string>('createdAt');
 
@@ -288,7 +406,7 @@ begin
    end;
 
  if AJson.Contains('offerId')
-  then offerId:=AJson.GetValue<Integer>('offerId');
+  then offerId:=AJson.GetValue<Int64>('offerId');
  if AJson.Contains('updatedAt')
   then updatedAt:=AJson.GetValue<string>('updatedAt');
 end;
@@ -324,7 +442,7 @@ begin
  if AJson.Contains('name')
   then name:=AJson.GetValue<string>('name');
  if AJson.Contains('userId')
-  then userId:=AJson.GetValue<Integer>('userId');
+  then userId:=AJson.GetValue<Int64>('userId');
 end;
 
 { TChatsReadabilityWebhook }
@@ -360,9 +478,9 @@ end;
 
 constructor TMainPhoto.Create(AJson: TJSONObject);
 begin
- if AJson.Contains('users')
+ if AJson.Contains('miniUrl')
   then miniUrl:=AJson.GetValue<string>('miniUrl');
- if AJson.Contains('users')
+ if AJson.Contains('url')
   then url:=AJson.GetValue<string>('url');
 end;
 
@@ -375,19 +493,19 @@ begin
  if AJson.Contains('externalId')
   then externalId:=AJson.GetValue<string>('externalId');
  if AJson.Contains('id')
-  then id:=AJson.GetValue<Integer>('id');
+  then id:=AJson.GetValue<Int64>('id');
  if AJson.Contains('mainPhoto')
   then mainPhoto:=TMainPhoto.Create(AJson.GetValue<TJSONObject>('mainPhoto'));
  if AJson.Contains('price')
   then price:=AJson.GetValue<string>('price');
  if AJson.Contains('publishedUserId')
-  then publishedUserId := AJson.GetValue<Integer>('publishedUserId');
+  then publishedUserId := AJson.GetValue<Int64>('publishedUserId');
  if AJson.Contains('title')
   then title:=AJson.GetValue<string>('title');
  if AJson.Contains('url')
   then url:=AJson.GetValue<string>('url');
  if AJson.Contains('userId')
-  then userId:=AJson.GetValue<Integer>('userId');
+  then userId:=AJson.GetValue<Int64>('userId');
 end;
 
 { TOffersMessagesWebhook }
@@ -413,7 +531,7 @@ begin
    begin
     JsonArray:=AJson.GetValue<TJSONArray>('offers');
     SetLength(offers, JsonArray.Count);
-    offerDict:=TDictionary<integer,TOfferDetails>.Create;
+    offerDict:=TDictionary<Int64,TOfferDetails>.Create;
     for i:=0 to JsonArray.Count-1 do
      begin
       Offer:=TOfferDetails.Create(JsonArray.Items[i] as TJSONObject);
@@ -422,7 +540,8 @@ begin
         begin
          offers[i]:=Offer;
          offerDict.Add(Offer.Id, Offer);
-        end;
+        end
+       else Offer.Free; //Дубликат
      end;
    end;
 
@@ -431,7 +550,7 @@ begin
    begin
     JsonArray := AJson.GetValue<TJSONArray>('users');
     SetLength(users, JsonArray.Count);
-    userDict:=TDictionary<integer,TUser>.Create;
+    userDict:=TDictionary<Int64,TUser>.Create;
     for i:=0 to JsonArray.Count-1 do
      begin
       User:=TUser.Create(JsonArray.Items[i] as TJSONObject);
@@ -440,7 +559,8 @@ begin
         begin
          users[i]:=User;
          userDict.Add(User.userId, User);
-        end;
+        end
+       else User.Free; //Дубликат
      end;
   end;
 
@@ -502,7 +622,7 @@ begin
  if AJson.Contains('messageId')
   then messageId:=AJson.GetValue<string>('messageId');
  if AJson.Contains('userId')
-  then userId:=AJson.GetValue<Integer>('userId');
+  then userId:=AJson.GetValue<Int64>('userId');
 end;
 
 { TSystemMessagesWebhook }
@@ -538,6 +658,8 @@ end;
 
 constructor TResult.Create(AJson: TJSONObject);
 begin
+ if AJson=nil
+  then Exit;
  if AJson.Contains('chatsReadabilityWebhook')
   then ChatsReadabilityWebhook:=TChatsReadabilityWebhook.Create(AJson.GetValue<TJSONObject>('chatsReadabilityWebhook'));
  if AJson.Contains('offersMessagesWebhook')
@@ -549,9 +671,6 @@ end;
 { TJsonData }
 
 constructor TCianResponseJson.Create(AJson: TJSONObject);
-var
- JsonObj: TJSONObject;
- ResultObj: TJSONObject;
 begin
  if AJson.Contains('operationId')
   then OperationId:=AJson.GetValue<string>('operationId');
@@ -559,11 +678,9 @@ begin
   then Result:=TResult.Create(AJson.GetValue<TJSONObject>('result'))
   else
    begin
-    ResultObj:=TJSONObject.Create;
-    JsonObj:=TJSONObject.Create;
-    JsonObj.AddPair(TJSONPair.Create('offersMessagesWebhook',AJson));
-    ResultObj.AddPair(TJSONPair.Create('result',JsonObj));
-    Result:=TResult.Create(ResultObj.GetValue<TJSONObject>('result'))
+    //Вебхук пришёл без обёртки result - сам объект и есть offersMessagesWebhook
+    Result:=TResult.Create(nil);
+    Result.offersMessagesWebhook:=TOffersMessagesWebhook.Create(AJson);
    end;
 end;
 
@@ -589,9 +706,17 @@ end;
 {$REGION 'CianResponseJson'}
 function ParseCianResponseJson(const JsonStr:string):TCianResponseJson;
 var
+ JsonValue: TJSONValue;
  JsonObj: TJSONObject;
 begin
- JsonObj:=TJSONObject.ParseJSONValue(TEncoding.UTF8.GetBytes(JsonStr),0) as TJSONObject;
+ JsonValue:=TJSONObject.ParseJSONValue(TEncoding.UTF8.GetBytes(JsonStr),0);
+ if not (JsonValue is TJSONObject)
+  then
+   begin
+    JsonValue.Free;
+    raise Exception.Create('Invalid JSON in webhook request');
+   end;
+ JsonObj:=TJSONObject(JsonValue);
  try
   Result:=TCianResponseJson.Create(JsonObj);
  finally
@@ -611,6 +736,8 @@ var
 begin
  Result:=False;
  JSONObject:=TJSONObject.ParseJSONValue(JsonStr) as TJSONObject;
+ if JSONObject=nil
+  then Exit;
  try
    if JSONObject.Contains('result')
     then
@@ -638,16 +765,20 @@ begin
 end;
 {$ENDREGION 'FoundValueSubscriptions'}
 
-function FindUserByUserId(AOffersMessagesWebhook:TOffersMessagesWebhook; AUserId:integer):TUser;
+function FindUserByUserId(AOffersMessagesWebhook:TOffersMessagesWebhook; AUserId:Int64):TUser;
 begin
- if AOffersMessagesWebhook.userDict.TryGetValue(AUserId,Result)
-  then Exit;
+ Result:=nil;
+ if (not Assigned(AOffersMessagesWebhook.userDict)) or
+    (not AOffersMessagesWebhook.userDict.TryGetValue(AUserId,Result))
+  then Result:=nil;
 end;
 
-function FindOfferByOfferId(AOffersMessagesWebhook:TOffersMessagesWebhook; AOfferId:integer):TOfferDetails;
+function FindOfferByOfferId(AOffersMessagesWebhook:TOffersMessagesWebhook; AOfferId:Int64):TOfferDetails;
 begin
- if AOffersMessagesWebhook.offerDict.TryGetValue(AOfferId,Result)
-  then Exit;
+ Result:=nil;
+ if (not Assigned(AOffersMessagesWebhook.offerDict)) or
+    (not AOffersMessagesWebhook.offerDict.TryGetValue(AOfferId,Result))
+  then Result:=nil;
 end;
 
 end.

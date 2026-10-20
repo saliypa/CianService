@@ -42,3 +42,6 @@ ExeOld/
 *.stat
 *.skincfg
 __recovery
+
+#Bodies of unprocessed webhooks (client personal data)
+FailedWebhooks/

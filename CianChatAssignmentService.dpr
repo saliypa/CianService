@@ -1,4 +1,4 @@
-program CianChatService;
+program CianChatAssignmentService;
 
 uses
   Vcl.SvcMgr,
@@ -8,7 +8,8 @@ uses
   Classes.DBCore in 'Classes.DBCore\Classes.DBCore.pas',
   Classes.CianChat in 'Classes.CianChat\Classes.CianChat.pas' {CianChat: TService},
   Classes.CianApiCore in 'Classes.CianCore\Classes.CianApiCore.pas',
-  Classes.CianResponseCore in 'Classes.CianCore\Classes.CianResponseCore.pas';
+  Classes.CianResponseCore in 'Classes.CianCore\Classes.CianResponseCore.pas',
+  Classes.CianHandler in 'Classes.CianCore\Classes.CianHandler.pas';
 
 {$R *.RES}
 
